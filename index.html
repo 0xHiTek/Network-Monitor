@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Monitor Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --medium: #6b7280;
+            --light: #f3f4f6;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header .status {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-item .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .status-item .label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: var(--light);
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .nav-tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--medium);
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-tab:hover {
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+            background: var(--white);
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            padding: 10px 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .device-card {
+            background: var(--white);
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .device-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--success);
+            transition: all 0.3s;
+        }
+
+        .device-card.offline::before {
+            background: var(--danger);
+        }
+
+        .device-card.warning::before {
+            background: var(--warning);
+        }
+
+        .device-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .device-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .device-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-online {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .status-offline {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .device-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: var(--medium);
+        }
+
+        .info-value {
+            color: var(--dark);
+            font-weight: 500;
+            font-family: 'Courier New', monospace;
+        }
+
+        .device-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--medium);
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .network-map {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 30px;
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .network-node {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: var(--white);
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .network-node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            z-index: 20;
+        }
+
+        .network-node.router {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .network-node .node-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .network-node .node-label {
+            font-size: 10px;
+            font-weight: 500;
+            text-align: center;
+            max-width: 70px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .network-line {
+            position: absolute;
+            background: var(--primary);
+            height: 2px;
+            transform-origin: left center;
+            opacity: 0.3;
+            z-index: 1;
+        }
+
+        .alerts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            background: var(--white);
+            border-left: 4px solid var(--warning);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+
+        .alert-item.critical {
+            border-left-color: var(--danger);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .alert-item.resolved {
+            border-left-color: var(--success);
+            opacity: 0.7;
+        }
+
+        .alert-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .alert-icon {
+            font-size: 24px;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .alert-description {
+            font-size: 14px;
+            color: var(--medium);
+        }
+
+        .alert-time {
+            font-size: 12px;
+            color: var(--medium);
+        }
+
+        .chart-container {
+            background: var(--white);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .chart {
+            height: 300px;
+            position: relative;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--dark);
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--medium);
+        }
+
+        .modal-close:hover {
+            color: var(--dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>🌐</span>
+                Network Monitor Pro
+            </h1>
+            <div class="status">
+                <div class="status-item">
+                    <div class="value" id="totalDevices">0</div>
+                    <div class="label">Total Devices</div>
+                </div>
+                <div class="status-item">
+                    <div class="value" id="onlineDevices">0</div>
+                    <div class="label">Online</div>
+                </div>
+                <div class="status-item">
+                    <div class="value" id="alertCount">0</div>
+                    <div class="label">Alerts</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('dashboard')">
+                📊 Dashboard
+            </button>
+            <button class="nav-tab" onclick="switchTab('devices')">
+                💻 Devices
+            </button>
+            <button class="nav-tab" onclick="switchTab('topology')">
+                🗺️ Network Map
+            </button>
+            <button class="nav-tab" onclick="switchTab('alerts')">
+                🔔 Alerts
+            </button>
+            <button class="nav-tab" onclick="switchTab('settings')">
+                ⚙️ Settings
+            </button>
+        </div>
+
+        <div class="content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="scanNetwork()">
+                        <span class="loading" id="scanLoader" style="display:none;"></span>
+                        <span id="scanText">🔍 Scan Network</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="refreshData()">
+                        🔄 Refresh
+                    </button>
+                    <div class="input-group">
+                        <input type="text" id="searchInput" placeholder="Search devices..." onkeyup="searchDevices()">
+                    </div>
+                </div>
+
+                <div class="devices-grid" id="devicesGrid">
+                    <!-- Device cards will be populated here -->
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Network Traffic Overview</div>
+                        <select onchange="updateChart(this.value)">
+                            <option value="1h">Last Hour</option>
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                        </select>
+                    </div>
+                    <div class="chart">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Devices Tab -->
+            <div id="devices" class="tab-content">
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="addDevice()">
+                        ➕ Add Device
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportDevices()">
+                        📥 Export CSV
+                    </button>
+                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--light);">
+                            <th style="padding: 12px; text-align: left;">Device Name</th>
+                            <th style="padding: 12px; text-align: left;">IP Address</th>
+                            <th style="padding: 12px; text-align: left;">MAC Address</th>
+                            <th style="padding: 12px; text-align: left;">Type</th>
+                            <th style="padding: 12px; text-align: left;">Status</th>
+                            <th style="padding: 12px; text-align: left;">Last Seen</th>
+                            <th style="padding: 12px; text-align: left;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="devicesTable">
+                        <!-- Table rows will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Network Topology Tab -->
+            <div id="topology" class="tab-content">
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="autoLayout()">
+                        🎯 Auto Layout
+                    </button>
+                    <button class="btn btn-secondary" onclick="saveTopology()">
+                        💾 Save Layout
+                    </button>
+                </div>
+                <div class="network-map" id="networkMap">
+                    <!-- Network visualization will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Alerts Tab -->
+            <div id="alerts" class="tab-content">
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="clearResolvedAlerts()">
+                        🧹 Clear Resolved
+                    </button>
+                    <button class="btn btn-secondary" onclick="configureAlerts()">
+                        ⚙️ Configure Rules
+                    </button>
+                </div>
+                <div class="alerts-list" id="alertsList">
+                    <!-- Alerts will be populated here -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <h3 style="margin-bottom: 20px;">Network Settings</h3>
+                <div style="display: flex; flex-direction: column; gap: 20px; max-width: 600px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Network Range</label>
+                        <input type="text" id="networkRange" value="192.168.1.0/24" style="width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Scan Interval (minutes)</label>
+                        <input type="number" id="scanInterval" value="5" min="1" max="60" style="width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Alert Email</label>
+                        <input type="email" id="alertEmail" placeholder="admin@example.com" style="width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="autoScan" checked> Enable Automatic Scanning
+                        </label>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px;">
+                            <input type="checkbox" id="notifications" checked> Enable Desktop Notifications
+                        </label>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        💾 Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Details Modal -->
+    <div id="deviceModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div class="modal-header">Device Details</div>
+            <div id="modalContent">
+                <!-- Device details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        let devices = [];
+        let alerts = [];
+        let networkTopology = {};
+        let scanInProgress = false;
+        let autoScanInterval = null;
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            loadSampleData();
+            startAutoScan();
+            setupCharts();
+        });
+
+        function initializeApp() {
+            // Request notification permission
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+
+            // Load saved settings
+            const savedSettings = localStorage.getItem('networkMonitorSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('networkRange').value = settings.networkRange || '192.168.1.0/24';
+                document.getElementById('scanInterval').value = settings.scanInterval || 5;
+                document.getElementById('alertEmail').value = settings.alertEmail || '';
+                document.getElementById('autoScan').checked = settings.autoScan !== false;
+                document.getElementById('notifications').checked = settings.notifications !== false;
+            }
+        }
+
+        function loadSampleData() {
+            // Sample devices for demonstration
+            devices = [
+                {
+                    id: 1,
+                    name: 'Main Router',
+                    ip: '192.168.1.1',
+                    mac: 'AA:BB:CC:DD:EE:FF',
+                    type: 'Router',
+                    status: 'online',
+                    lastSeen: new Date(),
+                    cpu: 45,
+                    memory: 62,
+                    bandwidth: 850
+                },
+                {
+                    id: 2,
+                    name: 'Development Server',
+                    ip: '192.168.1.10',
+                    mac: '11:22:33:44:55:66',
+                    type: 'Server',
+                    status: 'online',
+                    lastSeen: new Date(),
+                    cpu: 78,
+                    memory: 85,
+                    bandwidth: 1200
+                },
+                {
+                    id: 3,
+                    name: 'Office Printer',
+                    ip: '192.168.1.20',
+                    mac: '77:88:99:AA:BB:CC',
+                    type: 'Printer',
+                    status: 'online',
+                    lastSeen: new Date(),
+                    cpu: 0,
+                    memory: 0,
+                    bandwidth: 5
+                },
+                {
+                    id: 4,
+                    name: 'John\'s Laptop',
+                    ip: '192.168.1.101',
+                    mac: 'DD:EE:FF:00:11:22',
+                    type: 'Computer',
+                    status: 'online',
+                    lastSeen: new Date(),
+                    cpu: 32,
+                    memory: 48,
+                    bandwidth: 250
+                },
+                {
+                    id: 5,
+                    name: 'Smart TV',
+                    ip: '192.168.1.150',
+                    mac: '33:44:55:66:77:88',
+                    type: 'IoT Device',
+                    status: 'offline',
+                    lastSeen: new Date(Date.now() - 3600000),
+                    cpu: 0,
+                    memory: 0,
+                    bandwidth: 0
+                }
+            ];
+
+            // Sample alerts
+            alerts = [
+                {
+                    id: 1,
+                    title: 'High CPU Usage',
+                    description: 'Development Server CPU usage exceeded 75%',
+                    severity: 'warning',
+                    time: new Date(Date.now() - 300000),
+                    resolved: false
+                },
+                {
+                    id: 2,
+                    title: 'Device Offline',
+                    description: 'Smart TV has been offline for 1 hour',
+                    severity: 'critical',
+                    time: new Date(Date.now() - 3600000),
+                    resolved: false
+                }
+            ];
+
+            updateDashboard();
+            updateAlertsList();
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+
+            // Special handling for specific tabs
+            if (tabName === 'topology') {
+                renderNetworkMap();
+            } else if (tabName === 'devices') {
+                updateDevicesTable();
+            }
+        }
+
+        function scanNetwork() {
+            if (scanInProgress) return;
+
+            scanInProgress = true;
+            document.getElementById('scanLoader').style.display = 'inline-block';
+            document.getElementById('scanText').textContent = 'Scanning...';
+
+            // Simulate network scanning
+            setTimeout(() => {
+                // Add some new discovered devices
+                const newDevices = [
+                    {
+                        id: devices.length + 1,
+                        name: 'New Device ' + (devices.length + 1),
+                        ip: '192.168.1.' + (Math.floor(Math.random() * 200) + 50),
+                        mac: generateRandomMAC(),
+                        type: ['Computer', 'Phone', 'IoT Device'][Math.floor(Math.random() * 3)],
+                        status: Math.random() > 0.2 ? 'online' : 'offline',
+                        lastSeen: new Date(),
+                        cpu: Math.floor(Math.random() * 100),
+                        memory: Math.floor(Math.random() * 100),
+                        bandwidth: Math.floor(Math.random() * 500)
+                    }
+                ];
+
+                devices.push(...newDevices);
+                updateDashboard();
+
+                // Create notification for new devices
+                if (document.getElementById('notifications').checked && newDevices.length > 0) {
+                    showNotification('Network Scan Complete', `Found ${newDevices.length} new device(s)`);
+                }
+
+                scanInProgress = false;
+                document.getElementById('scanLoader').style.display = 'none';
+                document.getElementById('scanText').textContent = '🔍 Scan Network';
+            }, 3000);
+        }
+
+        function generateRandomMAC() {
+            const hex = '0123456789ABCDEF';
+            let mac = '';
+            for (let i = 0; i < 6; i++) {
+                if (i > 0) mac += ':';
+                mac += hex[Math.floor(Math.random() * 16)] + hex[Math.floor(Math.random() * 16)];
+            }
+            return mac;
+        }
+
+        function updateDashboard() {
+            // Update statistics
+            document.getElementById('totalDevices').textContent = devices.length;
+            document.getElementById('onlineDevices').textContent = devices.filter(d => d.status === 'online').length;
+            document.getElementById('alertCount').textContent = alerts.filter(a => !a.resolved).length;
+
+            // Update devices grid
+            const grid = document.getElementById('devicesGrid');
+            grid.innerHTML = '';
+
+            devices.forEach(device => {
+                const card = createDeviceCard(device);
+                grid.appendChild(card);
+            });
+        }
+
+        function createDeviceCard(device) {
+            const card = document.createElement('div');
+            card.className = `device-card ${device.status === 'offline' ? 'offline' : ''}`;
+            card.onclick = () => showDeviceDetails(device);
+
+            const statusClass = device.status === 'online' ? 'status-online' : 'status-offline';
+            const statusIcon = device.status === 'online' ? '🟢' : '🔴';
+
+            card.innerHTML = `
+                <div class="device-header">
+                    <div class="device-name">${device.name}</div>
+                    <div class="device-status ${statusClass}">
+                        ${statusIcon} ${device.status}
+                    </div>
+                </div>
+                <div class="device-info">
+                    <div class="info-row">
+                        <span class="info-label">IP Address:</span>
+                        <span class="info-value">${device.ip}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">MAC:</span>
+                        <span class="info-value">${device.mac.substring(0, 8)}...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Type:</span>
+                        <span class="info-value">${device.type}</span>
+                    </div>
+                </div>
+                <div class="device-metrics">
+                    <div class="metric">
+                        <div class="metric-value">${device.cpu}%</div>
+                        <div class="metric-label">CPU</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">${device.memory}%</div>
+                        <div class="metric-label">Memory</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">${device.bandwidth}</div>
+                        <div class="metric-label">Mbps</div>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function showDeviceDetails(device) {
+            const modal = document.getElementById('deviceModal');
+            const content = document.getElementById('modalContent');
+            
+            content.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">${device.name}</h3>
+                        <span class="device-status ${device.status === 'online' ? 'status-online' : 'status-offline'}">
+                            ${device.status === 'online' ? '🟢' : '🔴'} ${device.status}
+                        </span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <strong>IP Address:</strong><br>
+                            ${device.ip}
+                        </div>
+                        <div>
+                            <strong>MAC Address:</strong><br>
+                            ${device.mac}
+                        </div>
+                        <div>
+                            <strong>Device Type:</strong><br>
+                            ${device.type}
+                        </div>
+                        <div>
+                            <strong>Last Seen:</strong><br>
+                            ${device.lastSeen.toLocaleString()}
+                        </div>
+                    </div>
+                    
+                    <div style="border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                        <h4>Performance Metrics</h4>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 10px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; color: var(--primary); font-weight: bold;">${device.cpu}%</div>
+                                <div style="font-size: 12px; color: var(--medium);">CPU Usage</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; color: var(--primary); font-weight: bold;">${device.memory}%</div>
+                                <div style="font-size: 12px; color: var(--medium);">Memory</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; color: var(--primary); font-weight: bold;">${device.bandwidth} Mbps</div>
+                                <div style="font-size: 12px; color: var(--medium);">Bandwidth</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="btn btn-primary" onclick="pingDevice(${device.id})">
+                            📡 Ping Device
+                        </button>
+                        <button class="btn btn-secondary" onclick="editDevice(${device.id})">
+                            ✏️ Edit
+                        </button>
+                        <button class="btn btn-secondary" style="background: var(--danger); color: white;" onclick="removeDevice(${device.id})">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('deviceModal').classList.remove('active');
+        }
+
+        function searchDevices() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.device-card');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+        }
+
+        function refreshData() {
+            // Simulate data refresh
+            devices.forEach(device => {
+                // Randomly update device metrics
+                device.cpu = Math.floor(Math.random() * 100);
+                device.memory = Math.floor(Math.random() * 100);
+                device.bandwidth = Math.floor(Math.random() * 1500);
+                
+                // Randomly change status for some devices
+                if (Math.random() > 0.9) {
+                    device.status = device.status === 'online' ? 'offline' : 'online';
+                    device.lastSeen = new Date();
+                    
+                    // Create alert for status change
+                    if (device.status === 'offline') {
+                        addAlert({
+                            title: 'Device Offline',
+                            description: `${device.name} is now offline`,
+                            severity: 'warning'
+                        });
+                    }
+                }
+            });
+            
+            updateDashboard();
+            showNotification('Data Refreshed', 'All device information has been updated');
+        }
+
+        function updateDevicesTable() {
+            const tbody = document.getElementById('devicesTable');
+            tbody.innerHTML = '';
+            
+            devices.forEach(device => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #e5e7eb';
+                
+                row.innerHTML = `
+                    <td style="padding: 12px;">${device.name}</td>
+                    <td style="padding: 12px; font-family: monospace;">${device.ip}</td>
+                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${device.mac}</td>
+                    <td style="padding: 12px;">${device.type}</td>
+                    <td style="padding: 12px;">
+                        <span class="device-status ${device.status === 'online' ? 'status-online' : 'status-offline'}">
+                            ${device.status === 'online' ? '🟢' : '🔴'} ${device.status}
+                        </span>
+                    </td>
+                    <td style="padding: 12px; font-size: 14px;">${device.lastSeen.toLocaleString()}</td>
+                    <td style="padding: 12px;">
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="showDeviceDetails(devices[${devices.indexOf(device)}])">
+                            View
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderNetworkMap() {
+            const map = document.getElementById('networkMap');
+            map.innerHTML = '';
+            
+            // Create router node (center)
+            const router = document.createElement('div');
+            router.className = 'network-node router';
+            router.innerHTML = `
+                <div class="node-icon">🌐</div>
+                <div class="node-label">Main Router</div>
+            `;
+            router.style.left = '50%';
+            router.style.top = '50%';
+            router.style.transform = 'translate(-50%, -50%)';
+            map.appendChild(router);
+            
+            // Add device nodes around the router
+            const angleStep = (2 * Math.PI) / devices.length;
+            const radius = 200;
+            
+            devices.forEach((device, index) => {
+                const angle = angleStep * index;
+                const x = 50 + radius * Math.cos(angle) / 5;
+                const y = 50 + radius * Math.sin(angle) / 5;
+                
+                // Create connection line
+                const line = document.createElement('div');
+                line.className = 'network-line';
+                line.style.left = '50%';
+                line.style.top = '50%';
+                
+                const lineLength = radius;
+                const lineAngle = angle * 180 / Math.PI;
+                line.style.width = lineLength + 'px';
+                line.style.transform = `rotate(${lineAngle}deg)`;
+                map.appendChild(line);
+                
+                // Create device node
+                const node = document.createElement('div');
+                node.className = 'network-node';
+                if (device.status === 'offline') {
+                    node.style.borderColor = 'var(--danger)';
+                    node.style.opacity = '0.6';
+                }
+                
+                const icon = getDeviceIcon(device.type);
+                node.innerHTML = `
+                    <div class="node-icon">${icon}</div>
+                    <div class="node-label">${device.name}</div>
+                `;
+                
+                node.style.left = x + '%';
+                node.style.top = y + '%';
+                node.style.transform = 'translate(-50%, -50%)';
+                
+                // Make nodes draggable
+                makeDraggable(node);
+                
+                map.appendChild(node);
+            });
+        }
+
+        function getDeviceIcon(type) {
+            const icons = {
+                'Router': '🌐',
+                'Server': '🖥️',
+                'Computer': '💻',
+                'Phone': '📱',
+                'Printer': '🖨️',
+                'IoT Device': '📡',
+                'Camera': '📷',
+                'Switch': '🔀'
+            };
+            return icons[type] || '📟';
+        }
+
+        function makeDraggable(element) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            
+            element.onmousedown = dragMouseDown;
+            
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+            
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+            
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        function autoLayout() {
+            renderNetworkMap();
+            showNotification('Layout Updated', 'Network map has been reorganized');
+        }
+
+        function updateAlertsList() {
+            const list = document.getElementById('alertsList');
+            list.innerHTML = '';
+            
+            if (alerts.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: var(--medium); padding: 40px;">No alerts at this time</div>';
+                return;
+            }
+            
+            alerts.sort((a, b) => b.time - a.time).forEach(alert => {
+                const alertElement = document.createElement('div');
+                alertElement.className = `alert-item ${alert.severity} ${alert.resolved ? 'resolved' : ''}`;
+                
+                const icon = alert.severity === 'critical' ? '🚨' : '⚠️';
+                const timeAgo = getTimeAgo(alert.time);
+                
+                alertElement.innerHTML = `
+                    <div class="alert-icon">${icon}</div>
+                    <div class="alert-content">
+                        <div class="alert-title">${alert.title}</div>
+                        <div class="alert-description">${alert.description}</div>
+                    </div>
+                    <div class="alert-time">${timeAgo}</div>
+                    ${!alert.resolved ? `
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="resolveAlert(${alert.id})">
+                            Resolve
+                        </button>
+                    ` : ''}
+                `;
+                
+                list.appendChild(alertElement);
+            });
+        }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return Math.floor(seconds / 60) + ' minutes ago';
+            if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+            return Math.floor(seconds / 86400) + ' days ago';
+        }
+
+        function addAlert(alertData) {
+            const alert = {
+                id: alerts.length + 1,
+                title: alertData.title,
+                description: alertData.description,
+                severity: alertData.severity || 'warning',
+                time: new Date(),
+                resolved: false
+            };
+            
+            alerts.push(alert);
+            updateAlertsList();
+            
+            // Update alert count
+            document.getElementById('alertCount').textContent = alerts.filter(a => !a.resolved).length;
+            
+            // Show notification
+            if (document.getElementById('notifications').checked) {
+                showNotification(alert.title, alert.description);
+            }
+        }
+
+        function resolveAlert(alertId) {
+            const alert = alerts.find(a => a.id === alertId);
+            if (alert) {
+                alert.resolved = true;
+                updateAlertsList();
+                document.getElementById('alertCount').textContent = alerts.filter(a => !a.resolved).length;
+            }
+        }
+
+        function clearResolvedAlerts() {
+            alerts = alerts.filter(a => !a.resolved);
+            updateAlertsList();
+            showNotification('Alerts Cleared', 'All resolved alerts have been removed');
+        }
+
+        function showNotification(title, body) {
+            // Browser notification
+            if ("Notification" in window && Notification.permission === "granted" && document.getElementById('notifications').checked) {
+                new Notification(title, {
+                    body: body,
+                    icon: '🌐'
+                });
+            }
+            
+            // Also show in-app notification (could be enhanced with a toast component)
+            console.log(`Notification: ${title} - ${body}`);
+        }
+
+        function pingDevice(deviceId) {
+            const device = devices.find(d => d.id === deviceId);
+            if (device) {
+                showNotification('Ping Sent', `Pinging ${device.name} at ${device.ip}`);
+                
+                // Simulate ping response
+                setTimeout(() => {
+                    const responseTime = Math.floor(Math.random() * 50) + 1;
+                    showNotification('Ping Response', `${device.name} responded in ${responseTime}ms`);
+                }, 1000);
+            }
+        }
+
+        function editDevice(deviceId) {
+            const device = devices.find(d => d.id === deviceId);
+            if (device) {
+                const newName = prompt('Enter new device name:', device.name);
+                if (newName) {
+                    device.name = newName;
+                    updateDashboard();
+                    closeModal();
+                    showNotification('Device Updated', `${device.name} has been updated`);
+                }
+            }
+        }
+
+        function removeDevice(deviceId) {
+            if (confirm('Are you sure you want to remove this device?')) {
+                devices = devices.filter(d => d.id !== deviceId);
+                updateDashboard();
+                closeModal();
+                showNotification('Device Removed', 'Device has been removed from monitoring');
+            }
+        }
+
+        function addDevice() {
+            const ip = prompt('Enter device IP address:');
+            if (ip) {
+                const newDevice = {
+                    id: devices.length + 1,
+                    name: 'Manual Device ' + (devices.length + 1),
+                    ip: ip,
+                    mac: generateRandomMAC(),
+                    type: 'Computer',
+                    status: 'online',
+                    lastSeen: new Date(),
+                    cpu: 0,
+                    memory: 0,
+                    bandwidth: 0
+                };
+                
+                devices.push(newDevice);
+                updateDashboard();
+                updateDevicesTable();
+                showNotification('Device Added', `${newDevice.name} has been added`);
+            }
+        }
+
+        function exportDevices() {
+            let csv = 'Name,IP Address,MAC Address,Type,Status,Last Seen\n';
+            devices.forEach(device => {
+                csv += `${device.name},${device.ip},${device.mac},${device.type},${device.status},${device.lastSeen.toISOString()}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'network_devices.csv';
+            a.click();
+            
+            showNotification('Export Complete', 'Device list has been exported to CSV');
+        }
+
+        function saveSettings() {
+            const settings = {
+                networkRange: document.getElementById('networkRange').value,
+                scanInterval: document.getElementById('scanInterval').value,
+                alertEmail: document.getElementById('alertEmail').value,
+                autoScan: document.getElementById('autoScan').checked,
+                notifications: document.getElementById('notifications').checked
+            };
+            
+            localStorage.setItem('networkMonitorSettings', JSON.stringify(settings));
+            
+            // Restart auto-scan with new interval
+            if (settings.autoScan) {
+                startAutoScan();
+            } else {
+                stopAutoScan();
+            }
+            
+            showNotification('Settings Saved', 'Your settings have been saved successfully');
+        }
+
+        function startAutoScan() {
+            stopAutoScan(); // Clear any existing interval
+            
+            if (document.getElementById('autoScan').checked) {
+                const interval = parseInt(document.getElementById('scanInterval').value) * 60 * 1000;
+                autoScanInterval = setInterval(() => {
+                    scanNetwork();
+                }, interval);
+            }
+        }
+
+        function stopAutoScan() {
+            if (autoScanInterval) {
+                clearInterval(autoScanInterval);
+                autoScanInterval = null;
+            }
+        }
+
+        function setupCharts() {
+            // Create a simple traffic chart using canvas
+            const canvas = document.getElementById('trafficChart');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.offsetWidth;
+                canvas.height = 280;
+                
+                // Simple line chart
+                drawTrafficChart(ctx, canvas.width, canvas.height);
+            }
+        }
+
+        function drawTrafficChart(ctx, width, height) {
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Generate sample data
+            const points = 24;
+            const data = Array.from({length: points}, () => Math.random() * 100);
+            
+            // Draw grid
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i <= 5; i++) {
+                const y = (height - 40) * (i / 5) + 20;
+                ctx.beginPath();
+                ctx.moveTo(40, y);
+                ctx.lineTo(width - 20, y);
+                ctx.stroke();
+            }
+            
+            // Draw line chart
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            const xStep = (width - 60) / (points - 1);
+            const yScale = (height - 60) / 100;
+            
+            data.forEach((value, index) => {
+                const x = 40 + index * xStep;
+                const y = height - 20 - (value * yScale);
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            // Draw points
+            ctx.fillStyle = '#2563eb';
+            data.forEach((value, index) => {
+                const x = 40 + index * xStep;
+                const y = height - 20 - (value * yScale);
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw labels
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '12px sans-serif';
+            
+            // Y-axis labels
+            for (let i = 0; i <= 5; i++) {
+                const value = 100 - (i * 20);
+                const y = (height - 40) * (i / 5) + 25;
+                ctx.fillText(value + ' Mbps', 5, y);
+            }
+            
+            // X-axis labels
+            for (let i = 0; i < points; i += 4) {
+                const x = 40 + i * xStep;
+                ctx.fillText(i + 'h', x - 10, height - 5);
+            }
+        }
+
+        function updateChart(timeRange) {
+            setupCharts();
+            showNotification('Chart Updated', `Showing data for last ${timeRange}`);
+        }
+
+        function configureAlerts() {
+            alert('Alert configuration panel would open here. You can set thresholds for CPU, Memory, Bandwidth, and uptime alerts.');
+        }
+
+        function saveTopology() {
+            showNotification('Topology Saved', 'Network topology layout has been saved');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('deviceModal');
+            if (event.target == modal) {
+                modal.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
