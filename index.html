@@ -855,43 +855,33 @@
             }
         }
 
-        function scanNetwork() {
+        async function scanNetwork() {
             if (scanInProgress) return;
-
+            
             scanInProgress = true;
             document.getElementById('scanLoader').style.display = 'inline-block';
             document.getElementById('scanText').textContent = 'Scanning...';
-
-            // Simulate network scanning
-            setTimeout(() => {
-                // Add some new discovered devices
-                const newDevices = [
-                    {
-                        id: devices.length + 1,
-                        name: 'New Device ' + (devices.length + 1),
-                        ip: '192.168.1.' + (Math.floor(Math.random() * 200) + 50),
-                        mac: generateRandomMAC(),
-                        type: ['Computer', 'Phone', 'IoT Device'][Math.floor(Math.random() * 3)],
-                        status: Math.random() > 0.2 ? 'online' : 'offline',
-                        lastSeen: new Date(),
-                        cpu: Math.floor(Math.random() * 100),
-                        memory: Math.floor(Math.random() * 100),
-                        bandwidth: Math.floor(Math.random() * 500)
-                    }
-                ];
-
-                devices.push(...newDevices);
-                updateDashboard();
-
-                // Create notification for new devices
-                if (document.getElementById('notifications').checked && newDevices.length > 0) {
-                    showNotification('Network Scan Complete', `Found ${newDevices.length} new device(s)`);
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/scan', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    devices = result.devices;
+                    updateDashboard();
+                    showNotification('Scan Complete', `Found ${result.devices.length} devices`);
                 }
-
+            } catch (error) {
+                console.error('Scan failed:', error);
+                showNotification('Scan Failed', 'Could not complete network scan');
+            } finally {
                 scanInProgress = false;
                 document.getElementById('scanLoader').style.display = 'none';
                 document.getElementById('scanText').textContent = '🔍 Scan Network';
-            }, 3000);
+            }
         }
 
         function generateRandomMAC() {
